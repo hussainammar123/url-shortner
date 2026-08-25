@@ -1,1 +1,475 @@
 
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>SwiftLink — Premium URL Shortener & Analytics</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                brand: {
+                  50: '#eef2ff',
+                  100: '#e0e7ff',
+                  400: '#818cf8',
+                  500: '#6366f1',
+                  600: '#4f46e5',
+                  DEFAULT: '#6366f1',
+                },
+                accent: {
+                  cyan: '#06b6d4',
+                  emerald: '#10b981',
+                  violet: '#8b5cf6',
+                },
+                dark: {
+                  bg: '#090d16',
+                  card: '#111827',
+                  border: 'rgba(255, 255, 255, 0.08)',
+                }
+              },
+              fontFamily: {
+                sans: ['Plus Jakarta Sans', 'sans-serif'],
+                mono: ['JetBrains Mono', 'monospace']
+              },
+              animation: {
+                'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'float': 'float 6s ease-in-out infinite',
+                'glow': 'glow 3s ease-in-out infinite alternate',
+                'shimmer': 'shimmer 2s linear infinite',
+              },
+              keyframes: {
+                float: {
+                  '0%, 100%': { transform: 'translateY(0px)' },
+                  '50%': { transform: 'translateY(-10px)' },
+                },
+                glow: {
+                  '0%': { opacity: '0.4', filter: 'blur(20px)' },
+                  '100%': { opacity: '0.8', filter: 'blur(30px)' },
+                },
+                shimmer: {
+                  '0%': { backgroundPosition: '-200% 0' },
+                  '100%': { backgroundPosition: '200% 0' },
+                }
+              }
+            }
+          }
+        }
+      </script>
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-input:focus-within {
+            border-color: #6366f1;
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+        }
+
+        /* Glow effects */
+        .glow-accent {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #06b6d4 100%);
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-gradient:hover {
+            box-shadow: 0 0 35px rgba(99, 102, 241, 0.6), 0 0 15px rgba(6, 182, 212, 0.4);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .btn-gradient:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Text gradient */
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-text-vibrant {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .toast-slide {
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col relative selection:bg-brand-500 selection:text-white">
+
+    <!-- Background Ambient Glow Orbs -->
+    <div class="glow-accent w-[600px] h-[600px] bg-brand-500/15 top-[-100px] left-1/2 -translate-x-1/2 blur-[140px] animate-pulse-slow"></div>
+    <div class="glow-accent w-[400px] h-[400px] bg-accent-cyan/10 top-[300px] right-[-100px] blur-[120px]"></div>
+    <div class="glow-accent w-[450px] h-[450px] bg-accent-violet/10 bottom-[-50px] left-[-100px] blur-[130px]"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="w-full sticky top-0 z-50 glass-panel border-b border-white/5 bg-dark-bg/70 backdrop-blur-xl">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-accent-cyan flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+                    <span class="material-symbols-outlined text-white text-[24px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight gradient-text">SwiftLink</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/20 px-2 py-0.5 rounded-full ml-2">PRO</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <div class="hidden md:flex items-center gap-2 bg-dark-card/50 p-1.5 rounded-full border border-white/5">
+                <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="px-5 py-2 text-xs font-semibold text-white bg-brand-500/20 border border-brand-500/30 rounded-full transition-all">Home</button>
+                <button onclick="scrollToSection('stats-section')" class="px-5 py-2 text-xs font-semibold text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-all">Analytics</button>
+                <button onclick="scrollToSection('recent-section')" class="px-5 py-2 text-xs font-semibold text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-all">Recent Links</button>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>System Online</span>
+                </div>
+                <a href="/docs" target="_blank" class="text-xs font-semibold text-gray-400 hover:text-white px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">code</span> API Docs
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-6 pt-12 pb-24 space-y-16 relative z-10">
+
+        <!-- Hero Section -->
+        <section class="flex flex-col items-center text-center space-y-8 max-w-3xl mx-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-bold tracking-wide uppercase">
+                <span class="material-symbols-outlined text-[16px]">rocket_launch</span>
+                <span>Next-Gen URL Management Platform</span>
+            </div>
+
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight gradient-text">
+                Shorten Links with <br/>
+                <span class="gradient-text-vibrant">Unmatched Speed & Elegance</span>
+            </h1>
+
+            <p class="text-base md:text-lg text-gray-400 max-w-xl font-normal leading-relaxed">
+                Transform long, cumbersome URLs into sleek, trackable short links backed by ultra-fast Redis caching and dynamic QR codes.
+            </p>
+
+            <!-- Main Input Glass Form -->
+            <form id="shorten-form" class="w-full relative mt-4">
+                <div class="glass-input rounded-3xl p-3 shadow-2xl flex flex-col md:flex-row gap-3 transition-all">
+                    <div class="flex-grow flex items-center px-4 py-2">
+                        <span class="material-symbols-outlined text-brand-400 mr-3 text-[24px]">link</span>
+                        <input id="long-url-input" class="w-full bg-transparent border-none p-0 focus:ring-0 text-base md:text-lg text-white placeholder-gray-500 outline-none font-sans" placeholder="Paste your long URL here... (e.g. https://example.com/very-long-link)" required type="url"/>
+                    </div>
+                    <button type="submit" id="shorten-btn" class="btn-gradient text-white font-bold px-8 py-4 rounded-2xl flex items-center justify-center gap-2 min-h-[54px] min-w-[140px]">
+                        <span id="btn-text">Shorten</span>
+                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    </button>
+                </div>
+
+                <!-- Optional Controls (Custom Alias & Expiry) -->
+                <div class="mt-4 flex flex-wrap justify-center items-center gap-4 text-xs text-gray-400">
+                    <div class="flex items-center gap-2 bg-dark-card/60 px-4 py-2 rounded-xl border border-white/5">
+                        <span class="material-symbols-outlined text-brand-400 text-[16px]">edit</span>
+                        <span>Custom Alias:</span>
+                        <input id="custom-alias-input" type="text" placeholder="e.g. launch-2026" class="bg-transparent border-b border-gray-700 focus:border-brand-500 px-2 py-0.5 text-xs text-white outline-none w-32 font-mono"/>
+                    </div>
+                    <div class="flex items-center gap-2 bg-dark-card/60 px-4 py-2 rounded-xl border border-white/5">
+                        <span class="material-symbols-outlined text-accent-cyan text-[16px]">schedule</span>
+                        <span>Expires in:</span>
+                        <select id="expires-input" class="bg-transparent border-none p-0 text-xs text-white focus:ring-0 outline-none cursor-pointer">
+                            <option value="" class="bg-dark-card text-white">Never</option>
+                            <option value="7" class="bg-dark-card text-white">7 Days</option>
+                            <option value="30" class="bg-dark-card text-white">30 Days</option>
+                            <option value="90" class="bg-dark-card text-white">90 Days</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Result Card (Populates dynamically) -->
+            <div id="result-card" class="hidden w-full glass-panel rounded-3xl p-8 border border-brand-500/40 text-left relative overflow-hidden transition-all transform animate-float">
+                <div class="absolute -right-16 -top-16 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl"></div>
+                <div class="flex items-center justify-between mb-6">
+                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                        <span class="material-symbols-outlined text-[16px]">check_circle</span> URL Shortened Successfully
+                    </span>
+                    <span id="result-date" class="text-xs text-gray-500 font-mono">Just now</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                    <div class="col-span-1 md:col-span-3 space-y-3">
+                        <div class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Short URL</div>
+                        <div class="flex items-center gap-3">
+                            <input id="short-url-output" readonly type="text" class="w-full bg-dark-bg/80 font-mono text-brand-400 text-lg font-bold px-5 py-3 rounded-2xl border border-white/10 outline-none select-all shadow-inner"/>
+                            <button id="copy-btn" onclick="copyShortUrl()" class="btn-gradient text-white px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 transition-all shrink-0">
+                                <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                                <span id="copy-btn-text">Copy</span>
+                            </button>
+                        </div>
+                        <div class="text-xs text-gray-400 truncate max-w-md" id="original-url-display"></div>
+                    </div>
+                    <div class="flex flex-col items-center justify-center p-3 bg-white/95 rounded-2xl border border-white/20 shadow-xl">
+                        <img id="qr-code-img" src="" alt="QR Code" class="w-28 h-28 object-contain"/>
+                        <a id="qr-download-link" href="" download="qr-code.png" class="text-[11px] text-gray-900 font-bold mt-2 flex items-center gap-1 hover:text-brand-600 transition-colors">
+                            <span class="material-symbols-outlined text-[14px]">download</span> Download QR
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bento Grid Metrics & Stats -->
+        <section id="stats-section" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Total Clicks Card -->
+            <div class="col-span-1 md:col-span-2 glass-panel rounded-3xl p-8 relative overflow-hidden group">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Analytics Overview</div>
+                        <h3 class="text-2xl font-bold text-white">Total Link Clicks</h3>
+                    </div>
+                    <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span> Real-time Sync
+                    </span>
+                </div>
+                <div class="flex items-end justify-between gap-6">
+                    <div>
+                        <div id="total-clicks-count" class="text-5xl font-extrabold text-white tracking-tight font-mono">0</div>
+                        <div class="text-xs text-gray-400 mt-2">Active redirects across all links</div>
+                    </div>
+                    <div class="flex-grow h-20 flex items-end gap-2 max-w-xs">
+                        <div class="w-full bg-brand-500/20 hover:bg-brand-500/40 rounded-t-lg h-[40%] transition-all"></div>
+                        <div class="w-full bg-brand-500/30 hover:bg-brand-500/50 rounded-t-lg h-[65%] transition-all"></div>
+                        <div class="w-full bg-brand-500/20 hover:bg-brand-500/40 rounded-t-lg h-[50%] transition-all"></div>
+                        <div class="w-full bg-brand-500/40 hover:bg-brand-500/60 rounded-t-lg h-[85%] transition-all"></div>
+                        <div class="w-full bg-brand-500/60 hover:bg-brand-500/80 rounded-t-lg h-[70%] transition-all"></div>
+                        <div class="w-full bg-gradient-to-t from-brand-600 to-accent-cyan rounded-t-lg h-[100%] transition-all shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Card -->
+            <div class="glass-panel rounded-3xl p-8 flex flex-col justify-between hover:border-brand-500/30 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan">
+                        <span class="material-symbols-outlined text-[26px]">speed</span>
+                    </div>
+                    <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">Sub-5ms</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">Redis Acceleration</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        High-performance in-memory caching ensures instantaneous URL resolution and low latency.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Links Section -->
+        <section id="recent-section" class="glass-panel rounded-3xl p-8 space-y-6">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400">
+                        <span class="material-symbols-outlined text-[22px]">history</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Recent Short Links</h3>
+                        <p class="text-xs text-gray-400">Manage and inspect your created short URLs</p>
+                    </div>
+                </div>
+                <button onclick="loadRecentUrls()" class="text-xs font-semibold text-brand-400 hover:text-white px-4 py-2 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 transition-all flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">refresh</span> Refresh
+                </button>
+            </div>
+
+            <div id="recent-links-list" class="space-y-4">
+                <div class="text-center py-10 text-gray-500 text-sm">Loading recent short links...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 hidden">
+        <div class="glass-panel text-white px-6 py-3.5 rounded-2xl shadow-2xl font-semibold text-sm flex items-center gap-3 border border-brand-500/40 toast-slide">
+            <span class="material-symbols-outlined text-emerald-400 text-[20px]">check_circle</span>
+            <span id="toast-message">Copied to clipboard!</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadRecentUrls();
+
+            const form = document.getElementById('shorten-form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const longUrl = document.getElementById('long-url-input').value.trim();
+                const customAlias = document.getElementById('custom-alias-input').value.trim();
+                const expiresDays = document.getElementById('expires-input').value;
+                const btn = document.getElementById('shorten-btn');
+                const btnText = document.getElementById('btn-text');
+
+                if (!longUrl) return;
+
+                btnText.textContent = 'Shortening...';
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/shorten', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            url: longUrl,
+                            custom_alias: customAlias || null,
+                            expires_in_days: expiresDays ? parseInt(expiresDays) : null
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        showToast(data.detail || 'Failed to shorten URL');
+                        return;
+                    }
+
+                    // Display result
+                    document.getElementById('short-url-output').value = data.short_url;
+                    document.getElementById('original-url-display').textContent = 'Original: ' + data.original_url;
+                    document.getElementById('qr-code-img').src = data.qr_code_url;
+                    document.getElementById('qr-download-link').href = data.qr_code_url;
+                    
+                    const card = document.getElementById('result-card');
+                    card.classList.remove('hidden');
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    showToast('Short URL created!');
+                    loadStats();
+                    loadRecentUrls();
+                } catch (err) {
+                    showToast('Server connection error. Please try again.');
+                } finally {
+                    btnText.textContent = 'Shorten';
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('total-clicks-count').textContent = (data.total_clicks || 0).toLocaleString();
+                }
+            } catch (e) {}
+        }
+
+        async function loadRecentUrls() {
+            const container = document.getElementById('recent-links-list');
+            try {
+                const res = await fetch('/api/urls');
+                if (!res.ok) return;
+                const urls = await res.json();
+
+                if (urls.length === 0) {
+                    container.innerHTML = `<div class="text-center py-10 text-gray-500 text-sm">No short URLs created yet. Paste a long URL above to generate your first link!</div>`;
+                    return;
+                }
+
+                container.innerHTML = urls.map(u => `
+                    <div class="bg-dark-card/50 p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:border-brand-500/30 transition-all group">
+                        <div class="space-y-1.5 max-w-xl">
+                            <div class="flex items-center gap-3">
+                                <a href="${u.short_url}" target="_blank" class="font-mono text-brand-400 font-bold hover:text-white transition-colors flex items-center gap-1">
+                                    ${u.short_url}
+                                    <span class="material-symbols-outlined text-[14px] text-gray-500 group-hover:text-brand-400 transition-colors">open_in_new</span>
+                                </a>
+                                <span class="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">${u.clicks_count} Clicks</span>
+                            </div>
+                            <div class="text-xs text-gray-400 truncate max-w-md font-normal">${u.original_url}</div>
+                        </div>
+                        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                            <button onclick="copyText('${u.short_url}')" class="text-xs font-semibold bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all">
+                                <span class="material-symbols-outlined text-[15px]">content_copy</span> Copy
+                            </button>
+                            <a href="${u.qr_code_url}" target="_blank" class="text-xs font-semibold bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all">
+                                <span class="material-symbols-outlined text-[15px]">qr_code</span> QR Code
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="text-center py-6 text-red-400 text-sm">Failed to load recent links</div>`;
+            }
+        }
+
+        function copyShortUrl() {
+            const input = document.getElementById('short-url-output');
+            copyText(input.value);
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy');
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
